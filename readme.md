@@ -5,30 +5,33 @@ This IaC component permit parallel deployment of immutable resources on azure cl
 This is atomic routine for any CI/CD such as gitlab-ci, bitbucket-pipelines etc.
 In any case is possible to use it manually with run.sh helper script.
 
-![standalone](docs/screenshots/standalone.jpg)
-
 ## Configuration
 
 List of required envs. This envs will be set on your pipeline variables or in your .env file for manual usage.
 
 | Key                       | Value                         |
-| --------------------------|:-----------------------------:|
-| AWS_ACCESS_KEY_ID         | <access-key>                  |
-| AWS_SECRET_ACCESS_KEY     | <secret-key>                  |
-| AWS_DEFAULT_REGION        | eu-central-1                  |
-| IAC_MODE                  | <mode>                        |
-| IAC_GIT_USERNAME          | <service-account-username>    |
-| IAC_GIT_PASSWORD          | <service-account-username>    |
-| IAC_GIT_PROVIDER          | <provider-fqdn>               |
-| IAC_GIT_NAMESPACE         | <repo-namespace>              |
-| IAC_INFRA_NAME            | <repo-slug>                   |
-| IAC_LIVE_CACHE            | <bucket-name>                 |
-| IAC_CURRENT_INFRA         | <bucket-name>                 |
-| IMMUTABLE_NAME            | <resource-name>               |
-| IMMUTABLE_REFER           | <blueprint-name>              |
-| IMMUTABLE_TYPE            | <resource-type>               |
-| IMMUTABLE_BUNDLE          | <resource-bundle>             |
-| IMMUTABLE_ZONE            | <cloud-provider-zone>         |
+| -----------------------------------|:-----------------------------:|
+| AZURE_SUBSCRIPTION_ID              | <SubscriptionID>              |
+| AZURE_CLIENT_ID                    | <ApplicationId>               |
+| AZURE_SECRET                       | <Password>                    |
+| AZURE_TENANT                       | <TenantID>                    |
+| AZURE_RESOURCE_GROUP               | <ResourceGroupName>           |
+| AZURE_STORAGE_ACCOUNT              | <StorageAccountName>          |
+| AZURE_STORAGE_ACCESS_KEY           | <value>                       |
+| AZURE_STORAGE_CONNECTION_STRING    | <value>                       |
+| IAC_MODE                           | <mode>                        |
+| IAC_GIT_USERNAME                   | <service-account-username>    |
+| IAC_GIT_PASSWORD                   | <service-account-username>    |
+| IAC_GIT_PROVIDER                   | <provider-fqdn>               |
+| IAC_GIT_NAMESPACE                  | <repo-namespace>              |
+| IAC_INFRA_NAME                     | <repo-slug>                   |
+| IAC_LIVE_CACHE                     | <bucket-name>                 |
+| IAC_CURRENT_INFRA                  | <bucket-name>                 |
+| IMMUTABLE_NAME                     | <resource-name>               |
+| IMMUTABLE_REFER                    | <blueprint-name>              |
+| IMMUTABLE_TYPE                     | <resource-type>               |
+| IMMUTABLE_BUNDLE                   | <resource-bundle>             |
+| IMMUTABLE_ZONE                     | <cloud-provider-zone>         |
 
 
 ## Usage
