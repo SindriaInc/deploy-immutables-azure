@@ -1,6 +1,6 @@
-# Deploy Immutables
+# Deploy Immutables Azure
 
-This IaC component permit parallel deployment of immutable resources.
+This IaC component permit parallel deployment of immutable resources on azure cloud.
 
 This is atomic routine for any CI/CD such as gitlab-ci, bitbucket-pipelines etc.
 In any case is possible to use it manually with run.sh helper script.
@@ -52,9 +52,9 @@ For standalone usage you can override deployments.yaml configuration with volume
 
 ## Setup Development Environment
 
-- Clone this repo: `git clone git@github.com:SindriaInc/deploy-immutables.git`
-- Move into it: `cd deploy-immutables`
-- Build local image: `bash build.sh sindriainc/deploy-immutables local`
+- Clone this repo: `git clone git@github.com:SindriaInc/deploy-immutables-azure.git`
+- Move into it: `cd deploy-immutables-azure`
+- Build local image: `bash build.sh sindriainc/deploy-immutables-azure local`
 - Setup env: `cp .env.local .env`
 - Setup docker compose: `cp docker-compose.local.yml docker-compose.yml`
 - Start environment: `docker-compose up -d`
