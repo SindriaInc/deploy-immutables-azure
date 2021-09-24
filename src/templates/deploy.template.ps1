@@ -1,4 +1,4 @@
-#Prepare the VM parameters
+# Prepare the VM parameters
 
 $rgName = ""
 
@@ -22,7 +22,7 @@ $storageAccountType = "StandardLRS"
 
 $IPaddress = "10.10.10.10"
 
-#Create the VM resources
+# Create the VM resources
 
 $IPconfig = New-AzureRmNetworkInterfaceIpConfig -Name "IPConfig1" -PrivateIpAddressVersion IPv4 -PrivateIpAddress $IPaddress -SubnetId $subnet
 
@@ -38,6 +38,6 @@ $vm = Set-AzureRmVMOSDisk -VM $vm -ManagedDiskId $osDisk.Id -StorageAccountType 
 
 $vm = Set-AzureRmVMBootDiagnostics -VM $vm -disable
 
-#Create the new VM
+# Create the new VM
 
 New-AzureRmVM -ResourceGroupName $rgName -Location $location -VM $vm

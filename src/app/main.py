@@ -28,7 +28,7 @@ def create_azure(immutable):
 
 
 # Multi process azure immutable
-def process_lightsail(azure_immutables):
+def process_azure(azure_immutables):
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = [executor.submit(create_azure, immutable) for immutable in azure_immutables]
 
@@ -44,12 +44,12 @@ def main():
 
     for k,immutable in data['immutables'].items():
 
-        # Filter lightsail deployments
+        # Filter azure deployments
         if (immutable['type'] == "azure"):
             azure_immutables.append(immutable)
 
 
-    t1 = threading.Thread(target=process_lightsail, args=[azure_immutables])
+    t1 = threading.Thread(target=process_azure, args=[azure_immutables])
 
     t1.start()
 

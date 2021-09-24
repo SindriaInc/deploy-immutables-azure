@@ -77,14 +77,9 @@ RUN apk add --no-cache \
     chmod +x /opt/microsoft/powershell/7/pwsh && \
     ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
 
-# Install PowerShellGet utils
-RUN pwsh Install-Module -Name PowerShellGet -Force
-
-# Install Azure PowerShell
-RUN pwsh Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force
-
-# Install Azure RM PowerShell
-RUN pwsh Install-Module -Name AzureRM -AllowClobber
+# Install Azure PowerShell and Azure RM PowerShell
+COPY resources/scripts/azure.ps1 /usr/local/bin/azure.ps1
+RUN pwsh /usr/local/bin/azure.ps1
 
 # Install application
 COPY ./ /var/www/app
