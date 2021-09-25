@@ -41,12 +41,28 @@ def create_azure(immutable):
     if not os.path.exists(BUILD_DIRECTORY + '/' + workspace):
         os.makedirs(BUILD_DIRECTORY + '/' + workspace)
 
-    subprocess.call('cp '+DEPLOY_TEMPLATE+' '+BUILD_DIRECTORY + '/' + workspace+'/deploy.ps1', shell=True)
+    subprocess.call('cp '+DEPLOY_TEMPLATE+' '+BUILD_DIRECTORY + '/' + workspace+'/deploy.template.ps1', shell=True)
 
     common = helpers.common()
-    current = BUILD_DIRECTORY + '/' + workspace + '/deploy.ps1'
-    # TODO: build deploy.ps1 with values
+    current_template = BUILD_DIRECTORY + '/' + workspace + '/deploy.template.ps1'
+    current_script = BUILD_DIRECTORY + '/' + workspace + '/deploy.ps1'
 
+    # TODO: filter common values
+
+    with open(current_template, 'r') as template:
+        with open(current_script, 'w+') as output:
+            for line in template.readlines():
+                line = line.replace("@@IMMUTABLE_RESOURCE_GROUP@@", immutable["rg"])
+                line = line.replace("@@IMMUTABLE_REGION@@", immutable["region"])
+                line = line.replace("@@IMMUTABLE_VPC@@", immutable["vpc"])
+                line = line.replace("@@IMMUTABLE_SUBNET@@", immutable["subnet"])
+                line = line.replace("@@IMMUTABLE_NAME@@", immutable["name"])
+                line = line.replace("@@IMMUTABLE_BLUEPRINT@@", immutable["blueprint"])
+                line = line.replace("@@IMMUTABLE_BUNDLE@@", immutable["bundle"])
+                line = line.replace("@@IMMUTABLE_STORAGE_ACCOUNT_TYPE@@", immutable["storage"])
+                line = line.replace("@@IMMUTABLE_PRIVATE_IP_ADDRESS@@", immutable["private_ip_address"])
+
+                output.write(line)
 
     # Execute powershell script
     stdout = subprocess.check_output(['pwsh', BUILD_DIRECTORY + '/' + workspace + '/deploy.ps1'], universal_newlines=True)

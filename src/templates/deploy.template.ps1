@@ -14,7 +14,7 @@ $vmName = "@@IMMUTABLE_NAME@@"
 
 $osDiskName = "@@IMMUTABLE_NAME@@-OSDisk"
 
-$osDiskUri = "@@IMMUTABLE_REFER@@"
+$osDiskUri = "@@IMMUTABLE_BLUEPRINT@@"
 
 $VMSize = "@@IMMUTABLE_BUNDLE@@"
 
