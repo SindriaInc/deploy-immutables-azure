@@ -58,6 +58,7 @@ defaults:
       bundle: "Standard_A1"
       region: "australiaEast"
       storage: "StandardLRS"
+      rg: "example-rg"
 
 
 # Apps configuration

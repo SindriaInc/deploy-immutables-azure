@@ -44,22 +44,58 @@ def create_azure(immutable):
     subprocess.call('cp '+DEPLOY_TEMPLATE+' '+BUILD_DIRECTORY + '/' + workspace+'/deploy.template.ps1', shell=True)
 
     common = helpers.common()
+    common_azure = common['defaults']['immutables']['azure']
     current_template = BUILD_DIRECTORY + '/' + workspace + '/deploy.template.ps1'
     current_script = BUILD_DIRECTORY + '/' + workspace + '/deploy.ps1'
 
-    # TODO: filter common values
+    # Filter common values
+    if not 'rg' in immutable:
+        rg = common_azure['rg']
+    else:
+        rg = immutable["rg"]
 
+    if not 'region' in immutable:
+        region = common_azure['region']
+    else:
+        region = immutable["region"]
+
+    if not 'vpc' in immutable:
+        vpc = common_azure['vpc']
+    else:
+        vpc = immutable["vpc"]
+
+    if not 'subnet' in immutable:
+        subnet = common_azure['subnet']
+    else:
+        subnet = immutable["subnet"]
+
+    if not 'blueprint' in immutable:
+        blueprint = common_azure['blueprint']
+    else:
+        blueprint = immutable["blueprint"]
+
+    if not 'bundle' in immutable:
+        bundle = common_azure['bundle']
+    else:
+        bundle = immutable["bundle"]
+
+    if not 'storage' in immutable:
+        storage = common_azure['storage']
+    else:
+        storage = immutable['storage']
+
+    # Inject values
     with open(current_template, 'r') as template:
         with open(current_script, 'w+') as output:
             for line in template.readlines():
-                line = line.replace("@@IMMUTABLE_RESOURCE_GROUP@@", immutable["rg"])
-                line = line.replace("@@IMMUTABLE_REGION@@", immutable["region"])
-                line = line.replace("@@IMMUTABLE_VPC@@", immutable["vpc"])
-                line = line.replace("@@IMMUTABLE_SUBNET@@", immutable["subnet"])
+                line = line.replace("@@IMMUTABLE_RESOURCE_GROUP@@", rg)
+                line = line.replace("@@IMMUTABLE_REGION@@", region)
+                line = line.replace("@@IMMUTABLE_VPC@@", vpc)
+                line = line.replace("@@IMMUTABLE_SUBNET@@", subnet)
                 line = line.replace("@@IMMUTABLE_NAME@@", immutable["name"])
-                line = line.replace("@@IMMUTABLE_BLUEPRINT@@", immutable["blueprint"])
-                line = line.replace("@@IMMUTABLE_BUNDLE@@", immutable["bundle"])
-                line = line.replace("@@IMMUTABLE_STORAGE_ACCOUNT_TYPE@@", immutable["storage"])
+                line = line.replace("@@IMMUTABLE_BLUEPRINT@@", blueprint)
+                line = line.replace("@@IMMUTABLE_BUNDLE@@", bundle)
+                line = line.replace("@@IMMUTABLE_STORAGE_ACCOUNT_TYPE@@", storage)
                 line = line.replace("@@IMMUTABLE_PRIVATE_IP_ADDRESS@@", immutable["private_ip_address"])
 
                 output.write(line)
