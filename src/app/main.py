@@ -43,9 +43,9 @@ def create_azure(immutable):
 
     subprocess.call('cp '+DEPLOY_TEMPLATE+' '+BUILD_DIRECTORY + '/' + workspace+'/deploy.ps1', shell=True)
 
-    # TODO: build deploy.ps1 with values
     common = helpers.common()
     current = BUILD_DIRECTORY + '/' + workspace + '/deploy.ps1'
+    # TODO: build deploy.ps1 with values
 
 
     # Execute powershell script
