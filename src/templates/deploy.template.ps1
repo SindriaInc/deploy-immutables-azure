@@ -1,26 +1,26 @@
 # Prepare the VM parameters
 
-$rgName = ""
+$rgName = "@@IMMUTABLE_RESOURCE_GROUP@@"
 
-$location = "australiaEast"
+$location = "@@IMMUTABLE_REGION@@"
 
-$vnet = ""
+$vnet = "@@IMMUTABLE_VPC@@"
 
-$subnet = "/subscriptions/xxxxxxxxx/resourceGroups//providers/Microsoft.Network/virtualNetworks//subnets/"
+$subnet = "/subscriptions/@@IMMUTABLE_SUBNET@@/resourceGroups//providers/Microsoft.Network/virtualNetworks//subnets/"
 
-$nicName = "VM01-Nic-01"
+$nicName = "@@IMMUTABLE_NAME@@-Nic-01"
 
-$vmName = "VM01"
+$vmName = "@@IMMUTABLE_NAME@@"
 
-$osDiskName = "VM01-OSDisk"
+$osDiskName = "@@IMMUTABLE_NAME@@-OSDisk"
 
-$osDiskUri = "https://.blob.core.windows.net//server.vhd"
+$osDiskUri = "@@IMMUTABLE_REFER@@"
 
-$VMSize = "Standard_A1"
+$VMSize = "@@IMMUTABLE_BUNDLE@@"
 
-$storageAccountType = "StandardLRS"
+$storageAccountType = "@@IMMUTABLE_STORAGE_ACCOUNT_TYPE@@"
 
-$IPaddress = "10.10.10.10"
+$IPaddress = "@@IMMUTABLE_PRIVATE_IP_ADDRESS@@"
 
 # Create the VM resources
 
