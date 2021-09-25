@@ -5,9 +5,16 @@ import datetime
 # Global app config
 APP_CONFIG = '/var/www/app/config/deployments.yaml'
 
+# Global common config
+COMMON_CONFIG = '/var/www/app/config/common.yaml'
+
 # Get app config
 def app():
   return load(APP_CONFIG)
+
+# Get common config
+def common():
+  return load(COMMON_CONFIG)
 
 # Get current datetime
 def now():

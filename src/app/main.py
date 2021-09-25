@@ -10,7 +10,7 @@ from hashlib import sha256
 import helpers
 
 DEPLOY_TEMPLATE = '/var/www/app/templates/deploy.template.ps1'
-BUILD_DIRECTORY = '.build'
+BUILD_DIRECTORY = '/var/www/app/.build'
 
 # # Pycharm pydevd
 # PYCHARM_PYDEVD_ENABLED = int(os.getenv('PYCHARM_PYDEVD_ENABLED'))
@@ -44,6 +44,9 @@ def create_azure(immutable):
     subprocess.call('cp '+DEPLOY_TEMPLATE+' '+BUILD_DIRECTORY + '/' + workspace+'/deploy.ps1', shell=True)
 
     # TODO: build deploy.ps1 with values
+    common = helpers.common()
+    current = BUILD_DIRECTORY + '/' + workspace + '/deploy.ps1'
+
 
     # Execute powershell script
     stdout = subprocess.check_output(['pwsh', BUILD_DIRECTORY + '/' + workspace + '/deploy.ps1'], universal_newlines=True)
