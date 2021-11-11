@@ -52,90 +52,22 @@ def find_security_group(name):
     stdout = subprocess.check_output(['az', 'network', 'nsg', 'show', '-g', AZURE_RESOURCE_GROUP, '-n', name], universal_newlines=True)
     return json.loads(stdout)
 
+
 # Create azure immutable by SDK
 def create_azure(immutable):
 
     common = helpers.common()
-    #az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_SECRET} --tenant ${AZURE_TENANT}
     subprocess.call(["az", "login", "--service-principal", "-u", AZURE_CLIENT_ID, "-p", AZURE_SECRET, "--tenant", AZURE_TENANT])
 
     # Acquire credential object using CLI-based authentication.
     credential = AzureCliCredential()
 
-
-
-    # # 1 - create a resource group
-    #
-    # # Get the management object for resources, this uses the credentials from the CLI login.
-    # resource_client = ResourceManagementClient(credential, subscription_id)
-    #
-    # # Set constants we need in multiple places.  You can change these values however you want.
-    # RESOURCE_GROUP_NAME = "python-azure-vm-example-rg"
-    # LOCATION = "eastus"
-    #
-    # # create the resource group.
-    # rg_result = resource_client.resource_groups.create_or_update(RESOURCE_GROUP_NAME,{"location": LOCATION})
-    #
-    # print(f"Provisioned resource group {rg_result.name} in the {rg_result.location} region")
-
-
-
-
-
-    # # 2 - provision the virtual network
-    #
-    # # A virtual machine requires a network interface client (NIC). A NIC requires a virtual network (VNET) and subnet along with an IP address.
-    # # To support this requirement, we need to provision the VNET and Subnet first, then provision the NIC.
-    #
-    # # Network and IP address names
-
-    # VNET_NAME = "python-azure-vm-example-vnet"
-    # SUBNET_NAME = "python-azure-vm-example-subnet"
-    # IP_NAME = "python-azure-vm-example-ip"
-    # IP_CONFIG_NAME = "python-azure-vm-example-ip-config"
-    # NIC_NAME = "python-azure-vm-example-nic"
-    #
-    # # Get the management object for the network
-    # network_client = NetworkManagementClient(credential, subscription_id)
-    #
-    # # Create the virtual network
-    # poller = network_client.virtual_networks.begin_create_or_update(RESOURCE_GROUP_NAME, VNET_NAME,
-    #                                                                 {
-    #                                                                     "location": LOCATION,
-    #                                                                     "address_space": {
-    #                                                                         "address_prefixes": ["10.0.0.0/16"]
-    #                                                                     }
-    #                                                                 }
-    #                                                                 )
-    #
-    # vnet_result = poller.result()
-    #
-    # print(f"Provisioned virtual network {vnet_result.name} with address prefixes {vnet_result.address_space.address_prefixes}")
-
-
     # Get the management object for the network
     network_client = NetworkManagementClient(credential, AZURE_SUBSCRIPTION_ID)
 
-    VNET_NAME = immutable['vpc']
-    SUBNET_NAME = immutable['subnet']
-
-
-    # # 3 - Create the subnet
-    # poller = network_client.subnets.begin_create_or_update(AZURE_RESOURCE_GROUP, VNET_NAME, SUBNET_NAME, {"address_prefix": "10.127.0.0/24"})
-    # subnet_result = poller.result()
-    #
-    # print(f"Provisioned virtual subnet {subnet_result.name} with address prefix {subnet_result.address_prefix}")
-    #
-    # print("############### DEBUG ########################")
-    # print(subnet_result)
-    # print("############# END DEBUG ######################")
-
-
     IP_NAME = str(immutable['name']) + "-ip"
 
-
-
-    # 4 - Create the IP address
+    # Create the IP address
     poller = network_client.public_ip_addresses.begin_create_or_update(AZURE_RESOURCE_GROUP, IP_NAME,
                                                                        {
                                                                            "location": immutable['region'],
@@ -149,36 +81,21 @@ def create_azure(immutable):
 
     print(f"Provisioned public IP address {ip_address_result.name} with address {ip_address_result.ip_address}")
 
-    #print("############### DEBUG ########################")
-    #print(ip_address_result)
-    #print("############# END DEBUG ######################")
-
-
-    # # Network and IP address names
-    #VNET_NAME = "python-azure-vm-example-vnet"
-    #SUBNET_NAME = "python-azure-vm-example-subnet"
 
     IP_CONFIG_NAME = str(immutable['name']) + "-ip-config"
     NIC_NAME = str(immutable['name']) + "-nic"
 
     subnet_id = "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, immutable['vpc'], immutable['subnet'])
 
+    # Network security group
     sg = find_security_group(immutable['sg'])
 
-    # Debug security group
-    #print(sg)
-
-    #print(sg['id'])
-    #sys.exit(0)
-
-
-    # 5 - Create the network interface client
+    # Create the network interface client
     poller = network_client.network_interfaces.begin_create_or_update(AZURE_RESOURCE_GROUP, NIC_NAME,
                                                                       {
                                                                           "location": immutable['region'],
                                                                           "ip_configurations": [{
                                                                               "name": IP_CONFIG_NAME,
-                                                                              #"subnet": {"id": subnet_result.id},
                                                                               "subnet": {"id": subnet_id},
                                                                               "public_ip_address": {
                                                                                   "id": ip_address_result.id
@@ -195,17 +112,13 @@ def create_azure(immutable):
     print(f"Provisioned network interface client {nic_result.name}")
 
 
-
-
-
-    # 6 - Create the virtual machine
+    # Create the virtual machine
 
     # Get the management object for virtual machines
     compute_client = ComputeManagementClient(credential, AZURE_SUBSCRIPTION_ID)
 
     VM_NAME = immutable['name']
     USERNAME = common['cm']['name']
-    #PASSWORD = "ChangeM3N0w!"
 
     print(f"Provisioning virtual machine {VM_NAME}; this operation might take a few minutes.")
 
@@ -223,12 +136,6 @@ def create_azure(immutable):
                                                                             "image_reference": {
                                                                                 "id": "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Compute/images/{2}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, immutable['blueprint'])
                                                                             }
-                                                                            #"os_disk": {
-                                                                            #    #"name": immutable['name'] + '_disk0',
-                                                                            #    "vhd": {
-                                                                            #        "uri": immutable['blueprint']
-                                                                            #    }
-                                                                            #}
                                                                         },
                                                                         "hardware_profile": {
                                                                             "vm_size": immutable['bundle']
@@ -255,48 +162,8 @@ def create_azure(immutable):
                                                                     )
 
     vm_result = poller.result()
-
     print(f"Provisioned virtual machine {vm_result.name}")
 
-
-
-
-
-
-
-
-
-    # 4. Create the virtual machine
-
-    #compute_client = azure.core.credentials()
-
-    # result = compute_client.virtual_machines.create_or_update(GROUP_NAME, azure.mgmt.compute.VirtualMachine(
-    #         location=REGION,
-    #         name=VM_NAME,
-    #         os_profile=azure.mgmt.compute.OSProfile(
-    #             admin_username=ADMIN_USERNAME,
-    #             admin_password=ADMIN_PASSWORD,
-    #             computer_name=COMPUTER_NAME,
-    #         ),
-    #         hardware_profile=azure.mgmt.compute.HardwareProfile(
-    #             virtual_machine_size=azure.mgmt.compute.VirtualMachineSizeTypes.standard_a0
-    #         ),
-    #         network_profile=azure.mgmt.compute.NetworkProfile(
-    #             network_interfaces=[
-    #                 azure.mgmt.compute.NetworkInterfaceReference(
-    #                     reference_uri=nic_id,
-    #                 ),
-    #             ],
-    #         ),
-    #         storage_profile=azure.mgmt.compute.StorageProfile(os_disk=azure.mgmt.compute.OSDisk(
-    #                 caching=azure.mgmt.compute.CachingTypes.none,
-    #                 create_option=azure.mgmt.compute.DiskCreateOptionTypes.from_image,
-    #                 name=OS_DISK_NAME, # YourVHDname
-    #                 virtual_hard_disk = azure.mgmt.compute.VirtualHardDisk(uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.format(STORAGE_NAME, name),),
-    #         )
-    #         ),
-    # ),
-    # )
 
 # Create azure immutable by powershell
 def create_azure_powershell(immutable):
