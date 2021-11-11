@@ -3,10 +3,10 @@ import yaml
 import datetime
 
 # Global app config
-APP_CONFIG = '/var/www/app/config/deployments.yaml'
+APP_CONFIG = '/var/www/app/config/deployments.local.yaml'
 
 # Global common config
-COMMON_CONFIG = '/var/www/app/config/common.yaml'
+COMMON_CONFIG = '/var/www/app/config/common.local.yaml'
 
 # Get app config
 def app():

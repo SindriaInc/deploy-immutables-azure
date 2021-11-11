@@ -59,6 +59,8 @@ defaults:
       region: "australiaEast"
       storage: "StandardLRS"
       rg: "example-rg"
+      vpc: "example-rg"
+      subnet: "example-rg"
 
 
 # Apps configuration

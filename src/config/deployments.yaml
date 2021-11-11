@@ -2,7 +2,7 @@
 immutables:
   0:
     name: "@@NAME@@"
-    refer: "@@REFER@@"
+    blueprint: "@@BLUEPRINT@@"
     type: "@@TYPE@@"
     bundle: "@@BUNDLE@@"
-    zone: "@@ZONE@@"
+    region: "@@REGION@@"
