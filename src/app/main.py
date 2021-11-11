@@ -47,16 +47,60 @@ def build_workspace(name):
     return hash_result.hexdigest()
 
 
-# Find Security Group by name
+# Find Security Group by name - return dict
 def find_security_group(name):
     stdout = subprocess.check_output(['az', 'network', 'nsg', 'show', '-g', AZURE_RESOURCE_GROUP, '-n', name], universal_newlines=True)
     return json.loads(stdout)
 
 
-# Create azure immutable by SDK
+# Create azure immutable by SDK - return void
 def create_azure(immutable):
 
     common = helpers.common()
+    common_azure = common['defaults']['immutables']['azure']
+
+    # Filter common values
+    if not 'rg' in immutable:
+        rg = common_azure['rg']
+    else:
+        rg = immutable["rg"]
+
+    if not 'region' in immutable:
+        region = common_azure['region']
+    else:
+        region = immutable["region"]
+
+    if not 'vpc' in immutable:
+        vpc = common_azure['vpc']
+    else:
+        vpc = immutable["vpc"]
+
+    if not 'subnet' in immutable:
+        subnet = common_azure['subnet']
+    else:
+        subnet = immutable["subnet"]
+
+    if not 'blueprint' in immutable:
+        blueprint = common_azure['blueprint']
+    else:
+        blueprint = immutable["blueprint"]
+
+    if not 'bundle' in immutable:
+        bundle = common_azure['bundle']
+    else:
+        bundle = immutable["bundle"]
+
+    if not 'storage' in immutable:
+        storage = common_azure['storage']
+    else:
+        storage = immutable['storage']
+
+    if not 'sg' in immutable:
+        sg = common_azure['sg']
+    else:
+        sg = immutable['sg']
+
+
     subprocess.call(["az", "login", "--service-principal", "-u", AZURE_CLIENT_ID, "-p", AZURE_SECRET, "--tenant", AZURE_TENANT])
 
     # Acquire credential object using CLI-based authentication.
@@ -70,7 +114,7 @@ def create_azure(immutable):
     # Create the IP address
     poller = network_client.public_ip_addresses.begin_create_or_update(AZURE_RESOURCE_GROUP, IP_NAME,
                                                                        {
-                                                                           "location": immutable['region'],
+                                                                           "location": region,
                                                                            "sku": {"name": "Standard"},
                                                                            "public_ip_allocation_method": "Static",
                                                                            "public_ip_address_version": "IPV4"
@@ -85,15 +129,17 @@ def create_azure(immutable):
     IP_CONFIG_NAME = str(immutable['name']) + "-ip-config"
     NIC_NAME = str(immutable['name']) + "-nic"
 
-    subnet_id = "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, immutable['vpc'], immutable['subnet'])
+    subnet_id = "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, vpc, subnet)
 
-    # Network security group
-    sg = find_security_group(immutable['sg'])
+    # Network security group data
+    sg_data = find_security_group(sg)
+
+    # TODO: insert immutable private_ip_address into ip configuration
 
     # Create the network interface client
     poller = network_client.network_interfaces.begin_create_or_update(AZURE_RESOURCE_GROUP, NIC_NAME,
                                                                       {
-                                                                          "location": immutable['region'],
+                                                                          "location": region,
                                                                           "ip_configurations": [{
                                                                               "name": IP_CONFIG_NAME,
                                                                               "subnet": {"id": subnet_id},
@@ -102,7 +148,7 @@ def create_azure(immutable):
                                                                               }
                                                                           }],
                                                                           'network_security_group': {
-                                                                              'id': sg['id']
+                                                                              'id': sg_data['id']
                                                                           }
                                                                       }
                                                                       )
@@ -118,14 +164,17 @@ def create_azure(immutable):
     compute_client = ComputeManagementClient(credential, AZURE_SUBSCRIPTION_ID)
 
     VM_NAME = immutable['name']
+
+    # TODO: this not permit standalone usage
     USERNAME = common['cm']['name']
+    PUBKEY = common['cm']['pubkey']
 
     print(f"Provisioning virtual machine {VM_NAME}; this operation might take a few minutes.")
 
     # Create the VM
     poller = compute_client.virtual_machines.begin_create_or_update(AZURE_RESOURCE_GROUP, VM_NAME,
                                                                     {
-                                                                        "location": immutable['region'],
+                                                                        "location": region,
                                                                         "storage_profile": {
                                                                             #"image_reference": {
                                                                             #    "publisher": 'Canonical',
@@ -134,11 +183,11 @@ def create_azure(immutable):
                                                                             #    "version": "latest"
                                                                             #}
                                                                             "image_reference": {
-                                                                                "id": "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Compute/images/{2}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, immutable['blueprint'])
+                                                                                "id": "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Compute/images/{2}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, blueprint)
                                                                             }
                                                                         },
                                                                         "hardware_profile": {
-                                                                            "vm_size": immutable['bundle']
+                                                                            "vm_size": bundle
                                                                         },
                                                                         "os_profile": {
                                                                             "computer_name": VM_NAME,
@@ -148,7 +197,7 @@ def create_azure(immutable):
                                                                                 "ssh": {
                                                                                     "public_keys": [{
                                                                                         "path": "/home/{}/.ssh/authorized_keys".format(USERNAME),
-                                                                                        "key_data": common['cm']['pubkey']
+                                                                                        "key_data": PUBKEY
                                                                                     }]
                                                                                 }
                                                                             }
