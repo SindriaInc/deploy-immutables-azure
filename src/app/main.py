@@ -134,8 +134,6 @@ def create_azure(immutable):
     # Network security group data
     sg_data = find_security_group(sg)
 
-    # TODO: insert immutable private_ip_address into ip configuration
-
     # Create the network interface client
     poller = network_client.network_interfaces.begin_create_or_update(AZURE_RESOURCE_GROUP, NIC_NAME,
                                                                       {
@@ -143,6 +141,9 @@ def create_azure(immutable):
                                                                           "ip_configurations": [{
                                                                               "name": IP_CONFIG_NAME,
                                                                               "subnet": {"id": subnet_id},
+                                                                              "private_ip_allocation_method": "static",
+                                                                              #"private_ip_address_version": "ipv4",
+                                                                              "private_ip_address": immutable['private_ip_address'],
                                                                               "public_ip_address": {
                                                                                   "id": ip_address_result.id
                                                                               }
@@ -156,6 +157,10 @@ def create_azure(immutable):
     nic_result = poller.result()
 
     print(f"Provisioned network interface client {nic_result.name}")
+
+    print("Debug:")
+    print(nic_result)
+    print("End Debug")
 
 
     # Create the virtual machine
