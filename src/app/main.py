@@ -52,6 +52,16 @@ def find_security_group(name):
     stdout = subprocess.check_output(['az', 'network', 'nsg', 'show', '-g', AZURE_RESOURCE_GROUP, '-n', name], universal_newlines=True)
     return json.loads(stdout)
 
+# Check if immutable name already exists - return boolean
+def check_immutable_by_name(name):
+    query = "[?name=='{0}']".format(name)
+    stdout = subprocess.check_output(['az', 'vm', 'list', '-d', '-o', 'json', '--query', query], universal_newlines=True)
+    data = json.loads(stdout)
+
+    if data:
+        return True
+    return False
+
 
 # Create azure immutable by SDK - return void
 def create_azure(immutable):
@@ -106,115 +116,120 @@ def create_azure(immutable):
     # Acquire credential object using CLI-based authentication.
     credential = AzureCliCredential()
 
-    # TODO: implement idempotence - check if immutable['name'] already exists and skip in this case.
+    # Idempotence check if immutable name already exists
+    check = check_immutable_by_name(immutable['name'])
 
-    # Get the management object for the network
-    network_client = NetworkManagementClient(credential, AZURE_SUBSCRIPTION_ID)
+    if (check):
+        print(f"Immutable {immutable['name']} already exists, skip")
+    else:
 
-    IP_NAME = str(immutable['name']) + "-ip"
+        # Get the management object for the network
+        network_client = NetworkManagementClient(credential, AZURE_SUBSCRIPTION_ID)
 
-    # Create the IP address
-    poller = network_client.public_ip_addresses.begin_create_or_update(AZURE_RESOURCE_GROUP, IP_NAME,
-                                                                       {
-                                                                           "location": region,
-                                                                           "sku": {"name": "Standard"},
-                                                                           "public_ip_allocation_method": "Static",
-                                                                           "public_ip_address_version": "IPV4"
-                                                                       }
-                                                                       )
+        IP_NAME = str(immutable['name']) + "-ip"
 
-    ip_address_result = poller.result()
+        # Create the IP address
+        poller = network_client.public_ip_addresses.begin_create_or_update(AZURE_RESOURCE_GROUP, IP_NAME,
+                                                                           {
+                                                                               "location": region,
+                                                                               "sku": {"name": "Standard"},
+                                                                               "public_ip_allocation_method": "Static",
+                                                                               "public_ip_address_version": "IPV4"
+                                                                           }
+                                                                           )
 
-    print(f"Provisioned public IP address {ip_address_result.name} with address {ip_address_result.ip_address}")
+        ip_address_result = poller.result()
+
+        print(f"Provisioned public IP address {ip_address_result.name} with address {ip_address_result.ip_address}")
 
 
-    IP_CONFIG_NAME = str(immutable['name']) + "-ip-config"
-    NIC_NAME = str(immutable['name']) + "-nic"
+        IP_CONFIG_NAME = str(immutable['name']) + "-ip-config"
+        NIC_NAME = str(immutable['name']) + "-nic"
 
-    subnet_id = "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, vpc, subnet)
+        subnet_id = "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, vpc, subnet)
 
-    # Network security group data
-    sg_data = find_security_group(sg)
+        # Network security group data
+        sg_data = find_security_group(sg)
 
-    # Create the network interface client
-    poller = network_client.network_interfaces.begin_create_or_update(AZURE_RESOURCE_GROUP, NIC_NAME,
-                                                                      {
-                                                                          "location": region,
-                                                                          "ip_configurations": [{
-                                                                              "name": IP_CONFIG_NAME,
-                                                                              "subnet": {"id": subnet_id},
-                                                                              "private_ip_allocation_method": "static",
-                                                                              #"private_ip_address_version": "ipv4",
-                                                                              "private_ip_address": immutable['private_ip_address'],
-                                                                              "public_ip_address": {
-                                                                                  "id": ip_address_result.id
+        # Create the network interface client
+        poller = network_client.network_interfaces.begin_create_or_update(AZURE_RESOURCE_GROUP, NIC_NAME,
+                                                                          {
+                                                                              "location": region,
+                                                                              "ip_configurations": [{
+                                                                                  "name": IP_CONFIG_NAME,
+                                                                                  "subnet": {"id": subnet_id},
+                                                                                  "private_ip_allocation_method": "static",
+                                                                                  #"private_ip_address_version": "ipv4",
+                                                                                  "private_ip_address": immutable['private_ip_address'],
+                                                                                  "public_ip_address": {
+                                                                                      "id": ip_address_result.id
+                                                                                  }
+                                                                              }],
+                                                                              'network_security_group': {
+                                                                                  'id': sg_data['id']
                                                                               }
-                                                                          }],
-                                                                          'network_security_group': {
-                                                                              'id': sg_data['id']
                                                                           }
-                                                                      }
-                                                                      )
+                                                                          )
 
-    nic_result = poller.result()
+        nic_result = poller.result()
 
-    print(f"Provisioned network interface client {nic_result.name}")
+        print(f"Provisioned network interface client {nic_result.name}")
 
 
-    # Create the virtual machine
+        # Create the virtual machine
 
-    # Get the management object for virtual machines
-    compute_client = ComputeManagementClient(credential, AZURE_SUBSCRIPTION_ID)
+        # Get the management object for virtual machines
+        compute_client = ComputeManagementClient(credential, AZURE_SUBSCRIPTION_ID)
 
-    VM_NAME = immutable['name']
+        VM_NAME = immutable['name']
 
-    # TODO: this not permit standalone usage
-    USERNAME = common['cm']['name']
-    PUBKEY = common['cm']['pubkey']
+        # TODO: this not permit standalone usage
+        USERNAME = common['cm']['name']
+        PUBKEY = common['cm']['pubkey']
 
-    print(f"Provisioning virtual machine {VM_NAME}; this operation might take a few minutes.")
+        print(f"Provisioning virtual machine {VM_NAME}; this operation might take a few minutes.")
 
-    # Create the VM
-    poller = compute_client.virtual_machines.begin_create_or_update(AZURE_RESOURCE_GROUP, VM_NAME,
-                                                                    {
-                                                                        "location": region,
-                                                                        "storage_profile": {
-                                                                            #"image_reference": {
-                                                                            #    "publisher": 'Canonical',
-                                                                            #    "offer": "UbuntuServer",
-                                                                            #    "sku": "18.04-LTS",
-                                                                            #    "version": "latest"
-                                                                            #}
-                                                                            "image_reference": {
-                                                                                "id": "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Compute/images/{2}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, blueprint)
-                                                                            }
-                                                                        },
-                                                                        "hardware_profile": {
-                                                                            "vm_size": bundle
-                                                                        },
-                                                                        "os_profile": {
-                                                                            "computer_name": VM_NAME,
-                                                                            "admin_username": USERNAME,
-                                                                            "linux_configuration": {
-                                                                                "disable_password_authentication": True,
-                                                                                "ssh": {
-                                                                                    "public_keys": [{
-                                                                                        "path": "/home/{}/.ssh/authorized_keys".format(USERNAME),
-                                                                                        "key_data": PUBKEY
-                                                                                    }]
+        # Create the VM
+        poller = compute_client.virtual_machines.begin_create_or_update(AZURE_RESOURCE_GROUP, VM_NAME,
+                                                                        {
+                                                                            "location": region,
+                                                                            "storage_profile": {
+                                                                                #"image_reference": {
+                                                                                #    "publisher": 'Canonical',
+                                                                                #    "offer": "UbuntuServer",
+                                                                                #    "sku": "18.04-LTS",
+                                                                                #    "version": "latest"
+                                                                                #}
+                                                                                "image_reference": {
+                                                                                    "id": "/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Compute/images/{2}".format(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, blueprint)
                                                                                 }
+                                                                            },
+                                                                            "hardware_profile": {
+                                                                                "vm_size": bundle
+                                                                            },
+                                                                            "os_profile": {
+                                                                                "computer_name": VM_NAME,
+                                                                                "admin_username": USERNAME,
+                                                                                "linux_configuration": {
+                                                                                    "disable_password_authentication": True,
+                                                                                    "ssh": {
+                                                                                        "public_keys": [{
+                                                                                            "path": "/home/{}/.ssh/authorized_keys".format(USERNAME),
+                                                                                            "key_data": PUBKEY
+                                                                                        }]
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "network_profile": {
+                                                                                "network_interfaces": [{
+                                                                                    "id": nic_result.id,
+                                                                                }]
                                                                             }
-                                                                        },
-                                                                        "network_profile": {
-                                                                            "network_interfaces": [{
-                                                                                "id": nic_result.id,
-                                                                            }]
                                                                         }
-                                                                    }
-                                                                    )
+                                                                        )
 
-    vm_result = poller.result()
-    print(f"Provisioned virtual machine {vm_result.name}")
+        vm_result = poller.result()
+        print(f"Provisioned virtual machine {vm_result.name}")
 
 
 # Create azure immutable by powershell
