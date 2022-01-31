@@ -100,11 +100,13 @@ def create_azure(immutable):
     else:
         sg = immutable['sg']
 
-
+    # Login
     subprocess.call(["az", "login", "--service-principal", "-u", AZURE_CLIENT_ID, "-p", AZURE_SECRET, "--tenant", AZURE_TENANT])
 
     # Acquire credential object using CLI-based authentication.
     credential = AzureCliCredential()
+
+    # TODO: implement idempotence - check if immutable['name'] already exists and skip in this case.
 
     # Get the management object for the network
     network_client = NetworkManagementClient(credential, AZURE_SUBSCRIPTION_ID)
