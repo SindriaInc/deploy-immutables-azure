@@ -158,10 +158,6 @@ def create_azure(immutable):
 
     print(f"Provisioned network interface client {nic_result.name}")
 
-    print("Debug:")
-    print(nic_result)
-    print("End Debug")
-
 
     # Create the virtual machine
 
